@@ -7,6 +7,10 @@
   <arg name="yolo_model" default="yolov8n.pt"/>
   <arg name="target_distance" default="1.2"/>
   <arg name="stop_distance" default="0.8"/>
+  <arg name="max_linear_speed" default="0.22"/>
+  <arg name="max_angular_speed" default="1.2"/>
+  <arg name="linear_gain" default="0.35"/>
+  <arg name="angular_gain" default="1.2"/>
 
   <!-- Gazebo -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -43,6 +47,10 @@
     <param name="rgb_topic" value="/camera/rgb/image_raw"/>
     <param name="depth_topic" value="/camera/depth/image_raw"/>
     <param name="cmd_vel_topic" value="/cmd_vel"/>
+    <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
+    <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
+    <param name="linear_gain" value="$(arg linear_gain)"/>
+    <param name="angular_gain" value="$(arg angular_gain)"/>
   </node>
   
 </launch>

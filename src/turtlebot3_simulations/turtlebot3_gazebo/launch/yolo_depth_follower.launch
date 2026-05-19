@@ -7,6 +7,10 @@
   <arg name="cmd_vel_topic" default="/cmd_vel"/>
   <arg name="confidence_threshold" default="0.45"/>
   <arg name="search_when_lost" default="false"/>
+  <arg name="max_linear_speed" default="0.22"/>
+  <arg name="max_angular_speed" default="1.2"/>
+  <arg name="linear_gain" default="0.35"/>
+  <arg name="angular_gain" default="1.2"/>
 
   <node pkg="turtlebot3_gazebo"
         type="yolo_depth_follower.py"
@@ -20,5 +24,9 @@
     <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
     <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
     <param name="search_when_lost" value="$(arg search_when_lost)"/>
+    <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
+    <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
+    <param name="linear_gain" value="$(arg linear_gain)"/>
+    <param name="angular_gain" value="$(arg angular_gain)"/>
   </node>
 </launch>
