@@ -192,6 +192,22 @@
   </joint>
 
   <link name="camera_link">
+    <visual>
+      <origin xyz="0.005 0.011 0.013" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.018 0.034 0.028"/>
+      </geometry>
+      <material name="dark"/>
+    </visual>
+
+    <visual>
+      <origin xyz="0.016 0.011 0.013" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder length="0.006" radius="0.007"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+
     <collision>
       <origin xyz="0.005 0.011 0.013" rpy="0 0 0"/>
       <geometry>
