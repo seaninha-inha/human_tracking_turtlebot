@@ -3,6 +3,10 @@
   <arg name="x_pos" default="0.0"/>
   <arg name="y_pos" default="2.0"/>
   <arg name="z_pos" default="0.0"/>
+  <arg name="run_follower" default="true"/>
+  <arg name="yolo_model" default="yolov8n.pt"/>
+  <arg name="target_distance" default="1.2"/>
+  <arg name="stop_distance" default="0.8"/>
 
   <!-- Gazebo -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -26,5 +30,19 @@
   args="-urdf -model turtlebot3_$(arg model) 
   -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) 
   -param robot_description" />
+
+  <!-- Person following: YOLO person detection + depth distance control -->
+  <node if="$(arg run_follower)"
+        pkg="turtlebot3_gazebo"
+        type="yolo_depth_follower.py"
+        name="yolo_depth_follower"
+        output="screen">
+    <param name="model_path" value="$(arg yolo_model)"/>
+    <param name="target_distance" value="$(arg target_distance)"/>
+    <param name="stop_distance" value="$(arg stop_distance)"/>
+    <param name="rgb_topic" value="/camera/rgb/image_raw"/>
+    <param name="depth_topic" value="/camera/depth/image_raw"/>
+    <param name="cmd_vel_topic" value="/cmd_vel"/>
+  </node>
   
 </launch>
