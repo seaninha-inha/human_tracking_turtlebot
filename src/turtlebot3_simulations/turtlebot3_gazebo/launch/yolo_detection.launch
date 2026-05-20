@@ -1,56 +1,20 @@
 <launch>
-  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
-  <arg name="x_pos" default="0.0"/>
-  <arg name="y_pos" default="2.0"/>
-  <arg name="z_pos" default="0.0"/>
-  <arg name="run_follower" default="true"/>
+  <!-- Set YOLO model -->
   <arg name="yolo_model" default="yolov8n.pt"/>
-  <arg name="target_distance" default="1.2"/>
-  <arg name="stop_distance" default="0.8"/>
-  <arg name="max_linear_speed" default="0.22"/>
-  <arg name="max_angular_speed" default="1.2"/>
-  <arg name="linear_gain" default="0.35"/>
-  <arg name="angular_gain" default="1.2"/>
+  <arg name="rgb_topic" default="/camera/rgb/image_raw"/>
+  <!-- threshold -->
+  <arg name="confidence_threshold" default="0.45"/>
 
-  <!-- Gazebo -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find aws_robomaker_hospital_world)/worlds/hospital.world"/>
-    <arg name="paused" value="false"/>
-    <arg name="use_sim_time" value="true"/>
-    <arg name="gui" value="true"/>
-    <arg name="headless" value="false"/>
-    <arg name="debug" value="false"/>
-  </include>
-
-  <!-- Robot description -->
-  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
-  
-  <!-- TF publishers -->
-  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"/> <!-- URDF to TF -->
-  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/> <!-- joint value -->
-  
-  <!-- Spawn -->
-  <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"  
-  args="-urdf -model turtlebot3_$(arg model) 
-  -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) 
-  -param robot_description" />
-
-  <!-- Person following: YOLO person detection + depth distance control -->
-  <node if="$(arg run_follower)"
-        pkg="turtlebot3_gazebo"
-        type="yolo_depth_follower.py"
-        name="yolo_depth_follower"
+  <node pkg="turtlebot3_gazebo"
+        type="yolo_detector.py"
+        name="yolo_detection"
         output="screen">
+    
     <param name="model_path" value="$(arg yolo_model)"/>
-    <param name="target_distance" value="$(arg target_distance)"/>
-    <param name="stop_distance" value="$(arg stop_distance)"/>
-    <param name="rgb_topic" value="/camera/rgb/image_raw"/>
+    <param name="rgb_topic" value="$(arg rgb_topic)"/>
     <param name="depth_topic" value="/camera/depth/image_raw"/>
-    <param name="cmd_vel_topic" value="/cmd_vel"/>
-    <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
-    <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
-    <param name="linear_gain" value="$(arg linear_gain)"/>
-    <param name="angular_gain" value="$(arg angular_gain)"/>
+    <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
+    <param name="output_topic" value="/yolo_detection_image"/>
   </node>
   
 </launch>
