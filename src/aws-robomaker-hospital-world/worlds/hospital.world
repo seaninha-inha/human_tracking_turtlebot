@@ -1314,52 +1314,52 @@
 
           <!-- 1. 오른쪽 위 (→ 방향 이동) -->
           <waypoint>
-            <time>5</time>
+            <time>6</time>
             <pose>5 2 0 0 0 0</pose>
           </waypoint>
           
           <waypoint>
-            <time>6</time>
+            <time>7</time>
             <pose>5 2 0 0 0 -1.57</pose>
           </waypoint>
 
 
           <!-- 2. 오른쪽 아래 (↓ 방향 이동, 오른쪽 90도 회전) -->
           <waypoint>
-            <time>20</time>
+            <time>45</time>
             <pose>4.7 -24.4 0 0 0 -1.57</pose>
           </waypoint>
 
           <waypoint>
-            <time>21</time>
+            <time>46</time>
             <pose>4.7 -24.4 0 0 0 3.14</pose>
           </waypoint>
 
           <!-- 3. 왼쪽 아래 (← 방향 이동, 오른쪽 90도 회전) -->
           <waypoint>
-            <time>25</time>
+            <time>60</time>
             <pose>-5 -24.4 0 0 0 3.14</pose>
           </waypoint>
 
           <waypoint>
-            <time>26</time>
+            <time>61</time>
             <pose>-5 -24.4 0 0 0 1.57</pose>
           </waypoint>
 
           <!-- 4. 왼쪽 위 (↑ 방향 이동, 오른쪽 90도 회전) -->
           <waypoint>
-            <time>40</time>
+            <time>99</time>
             <pose>-5 2 0 0 0 1.57</pose>
           </waypoint>
 
           <waypoint>
-            <time>41</time>
+            <time>100</time>
             <pose>-5 2 0 0 0 0</pose>
           </waypoint>
 
           <!-- 5. 시작점으로 복귀 (→ 방향) -->
           <waypoint>
-            <time>45</time>
+            <time>108</time>
             <pose>0.6 2.0 0 0 0 0</pose>
           </waypoint>
 
