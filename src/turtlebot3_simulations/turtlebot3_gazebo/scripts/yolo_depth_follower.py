@@ -83,14 +83,17 @@ class YoloDepthFollower:
             rospy.logwarn_throttle(2.0, "Failed to convert RGB image: %s", exc)
             return
 
-        result = self.model(frame, verbose=False, conf=self.confidence_threshold)[0]
-        box = self.select_person_box(result)
+        # YOLO tracking
+        results = self.model.track(frame, persist=True, conf=self.confidence_threshold, verbose=False)
+
+        # Select best tracked person
+        box = self.select_person_box(results[0])
         if box is None:
             with self.lock:
                 self.latest_target = None
             return
 
-        x1, y1, x2, y2, confidence = box
+        x1, y1, x2, y2, confidence, track_id = box
         center_x = int((x1 + x2) * 0.5)
         center_y = int((y1 + y2) * 0.5)
         distance = self.depth_at(center_x, center_y)
@@ -102,6 +105,7 @@ class YoloDepthFollower:
                 "center_error": center_error,
                 "distance": distance,
                 "confidence": confidence,
+                "track_id": track_id,
             }
             self.last_detection_time = rospy.Time.now()
 
@@ -113,15 +117,17 @@ class YoloDepthFollower:
         best_area = 0.0
         for box in result.boxes:
             class_id = int(box.cls[0])
-            confidence = float(box.conf[0])
-            if class_id != 0 or confidence < self.confidence_threshold:
+            if class_id != 0:
                 continue
 
+            confidence = float(box.conf[0])
+            track_id = int(box.id[0]) if box.id is not None else -1
             x1, y1, x2, y2 = [float(value) for value in box.xyxy[0]]
+
             area = max(0.0, x2 - x1) * max(0.0, y2 - y1)
             if area > best_area:
                 best_area = area
-                best_box = (x1, y1, x2, y2, confidence)
+                best_box = (x1, y1, x2, y2, confidence, track_id)
         return best_box
 
     def depth_at(self, center_x, center_y):
