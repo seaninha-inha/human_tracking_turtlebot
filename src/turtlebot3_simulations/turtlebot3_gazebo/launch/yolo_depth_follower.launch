@@ -11,6 +11,7 @@
   <arg name="cmd_vel_topic" default="/cmd_vel"/>
   <!--YOLO detection confidence threshold-->
   <arg name="confidence_threshold" default="0.45"/>
+  <arg name="enable_gui" default="false"/>
 
   <arg name="search_when_lost" default="false"/>
 
@@ -32,6 +33,7 @@
     <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
     <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
     <param name="search_when_lost" value="$(arg search_when_lost)"/>
+    <param name="enable_gui" value="$(arg enable_gui)"/>
     
     <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
     <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
