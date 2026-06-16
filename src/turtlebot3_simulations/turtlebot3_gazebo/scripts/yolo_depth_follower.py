@@ -82,9 +82,8 @@ class YoloDepthFollower:
             rospy.logerr("Failed to load YOLO model '%s': %s", self.model_path, exc)
             return None
 
-    # ── 동기화된 콜백 ─────────────────────────────────────────────
+    # RGB + Depth가 시간적으로 맞는 쌍이 도착하면 호출됨
     def synced_callback(self, rgb_msg, depth_msg):
-        """RGB+Depth가 시간적으로 맞는 쌍이 도착하면 호출됨."""
         if self.model is None:
             return
         try:
