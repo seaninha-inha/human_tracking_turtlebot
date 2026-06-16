@@ -12,10 +12,12 @@ add_compile_options(-std=c++11)
 # Find catkin packages and libraries for catkin and system dependencies
 ################################################################################
 find_package(catkin REQUIRED COMPONENTS
+  rospy
   roscpp
   std_msgs
   sensor_msgs
   geometry_msgs
+  cv_bridge
   nav_msgs
   tf
   gazebo_ros
@@ -40,7 +42,7 @@ find_package(gazebo REQUIRED)
 ################################################################################
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp std_msgs sensor_msgs geometry_msgs nav_msgs tf gazebo_ros
+  CATKIN_DEPENDS rospy roscpp std_msgs sensor_msgs geometry_msgs cv_bridge nav_msgs tf gazebo_ros
   DEPENDS GAZEBO
 )
 
@@ -64,6 +66,11 @@ target_link_libraries(turtlebot3_drive ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 ################################################################################
 install(TARGETS turtlebot3_drive
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+catkin_install_python(PROGRAMS
+  scripts/yolo_depth_follower.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/

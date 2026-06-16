@@ -1,34 +1,30 @@
 <launch>
   <arg name="yolo_model" default="yolov8n.pt"/>
-
-  <arg name="target_distance" default="1.5"/>
+  <!--distance-->
+  <arg name="target_distance" default="1.2"/>
+  <!--stop distance-->
   <arg name="stop_distance" default="0.8"/>
   <!--input topics-->
   <arg name="rgb_topic" default="/camera/rgb/image_raw"/>
   <arg name="depth_topic" default="/camera/depth/image_raw"/>
   <!--topic to publish velocity commands-->
   <arg name="cmd_vel_topic" default="/cmd_vel"/>
+  <!--YOLO detection confidence threshold-->
   <arg name="confidence_threshold" default="0.45"/>
+  <arg name="enable_gui" default="false"/>
+
   <arg name="search_when_lost" default="false"/>
-  <arg name="detection_timeout" default="1.0"/>
 
-  <arg name="max_linear_speed" default="0.8"/>
-  <arg name="linear_gain" default="1.0"/>
-  <arg name="linear_d_gain" default="0.2"/>
+  <arg name="max_linear_speed" default="0.22"/>
   <arg name="max_angular_speed" default="1.2"/>
+  <arg name="linear_gain" default="0.35"/>
   <arg name="angular_gain" default="1.2"/>
-
-  <arg name="sync_slop" default="0.05"/>   <!-- RGB-Depth 동기화 허용 시간차 -->
-  <arg name="center_deadband_frac" default="0.04"/>   <!-- 이미지 폭의 4% -->
-  <arg name="control_rate" default="20.0"/>
 
   <node pkg="turtlebot3_gazebo"
         type="yolo_depth_follower.py"
         name="yolo_depth_follower"
         output="screen">
-
     <param name="model_path" value="$(arg yolo_model)"/>
-
     <param name="target_distance" value="$(arg target_distance)"/>
     <param name="stop_distance" value="$(arg stop_distance)"/>
     <param name="rgb_topic" value="$(arg rgb_topic)"/>
@@ -36,18 +32,12 @@
 
     <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
     <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
-
     <param name="search_when_lost" value="$(arg search_when_lost)"/>
-    <param name="detection_timeout" value="$(arg detection_timeout)"/>
-
+    <param name="enable_gui" value="$(arg enable_gui)"/>
+    
     <param name="max_linear_speed" value="$(arg max_linear_speed)"/>
-    <param name="linear_gain" value="$(arg linear_gain)"/>
-    <param name="linear_d_gain"        value="$(arg linear_d_gain)"/>
     <param name="max_angular_speed" value="$(arg max_angular_speed)"/>
+    <param name="linear_gain" value="$(arg linear_gain)"/>
     <param name="angular_gain" value="$(arg angular_gain)"/>
-
-    <param name="sync_slop"            value="$(arg sync_slop)"/>
-    <param name="center_deadband_frac" value="$(arg center_deadband_frac)"/>
-    <param name="control_rate"         value="$(arg control_rate)"/>
   </node>
 </launch>

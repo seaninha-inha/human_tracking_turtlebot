@@ -4,6 +4,7 @@
   <arg name="rgb_topic" default="/camera/rgb/image_raw"/>
   <!-- threshold -->
   <arg name="confidence_threshold" default="0.45"/>
+  <arg name="process_rate" default="5.0"/>
 
   <node pkg="turtlebot3_gazebo"
         type="yolo_detector.py"
@@ -14,6 +15,7 @@
     <param name="rgb_topic" value="$(arg rgb_topic)"/>
     <param name="depth_topic" value="/camera/depth/image_raw"/>
     <param name="confidence_threshold" value="$(arg confidence_threshold)"/>
+    <param name="process_rate" value="$(arg process_rate)"/>
     <param name="output_topic" value="/yolo_detection_image"/>
   </node>
   
