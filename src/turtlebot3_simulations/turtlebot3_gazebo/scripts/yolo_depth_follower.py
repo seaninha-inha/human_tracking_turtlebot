@@ -201,14 +201,6 @@ class YoloDepthFollower:
         if encoding == "16UC1":
             patch *= 0.001
 
-        # 디버깅용 로그: 유한한 값의 범위와 개수 출력
-        finite = patch[np.isfinite(patch)]
-        rospy.loginfo_throttle(0.5, "enc=%s raw_min=%s raw_max=%s finite=%d/%d",
-                       encoding,
-                       float(finite.min()) if finite.size else None,
-                       float(finite.max()) if finite.size else None,
-                       finite.size, patch.size)
-
         valid = patch[np.isfinite(patch)]
         valid = valid[(valid >= self.min_valid_depth) & (valid <= self.max_valid_depth)]
         return float(np.median(valid)) if valid.size > 0 else None
@@ -235,8 +227,7 @@ class YoloDepthFollower:
                                        self.max_angular_speed)
 
         # 선속도: (현재거리 - 목표거리에 비례, 목표거리 이내면 정지)
-        distance = target["distance"]
-        rospy.loginfo_throttle(0.5, "distance=%s", distance)   # 디버깅
+        distance = target["distance"]   # 디버깅
         if distance is not None:
             distance_error = distance - self.target_distance
             

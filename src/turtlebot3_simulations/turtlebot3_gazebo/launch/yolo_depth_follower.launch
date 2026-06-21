@@ -12,13 +12,13 @@
 
   <arg name="max_valid_depth" default="15.0"/>
 
-  <arg name="max_linear_speed" default="0.8"/>
+  <arg name="max_linear_speed" default="0.22"/>
   <arg name="linear_gain" default="1.0"/>
-  <arg name="max_angular_speed" default="0.6"/>
-  <arg name="angular_gain" default="0.4"/>
+  <arg name="max_angular_speed" default="0.5"/>
+  <arg name="angular_gain" default="0.3"/>
 
   <arg name="sync_slop" default="0.05"/>   <!-- RGB-Depth 동기화 허용 시간차 -->
-  <arg name="center_deadband_frac" default="0.04"/>   <!-- 이미지 폭의 4% -->
+  <arg name="center_deadband_frac" default="0.10"/>   <!-- 이미지 폭의 4% -->
   <arg name="control_rate" default="20.0"/>
 
   <!-- depth_window_px / min_valid_depth / max_valid_depth 는 코드 기본값 사용.
