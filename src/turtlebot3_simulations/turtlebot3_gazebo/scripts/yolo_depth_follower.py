@@ -2,6 +2,7 @@
 
 import queue
 import threading
+from enum import Enum
 
 import cv2
 import numpy as np
@@ -10,6 +11,12 @@ import message_filters
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
+
+
+class TrackingState(Enum):
+    IDLE = "IDLE"
+    NORMAL_TRACKING = "NORMAL_TRACKING"
+    TARGET_LOST = "TARGET_LOST"
 
 
 class YoloDepthFollower:
@@ -22,6 +29,7 @@ class YoloDepthFollower:
         self.depth_topic = rospy.get_param("~depth_topic", "/camera/depth/image_raw")
         self.cmd_vel_topic = rospy.get_param("~cmd_vel_topic", "/cmd_vel")
         self.model_path  = rospy.get_param("~model_path",  "yolov8n.pt")
+        self.tracker_config = rospy.get_param("~tracker_config", "botsort.yaml")
 
         self.confidence_threshold = rospy.get_param("~confidence_threshold", 0.45)
         # 이 거리까지 다가가 정지
@@ -35,12 +43,15 @@ class YoloDepthFollower:
         self.max_linear_speed     = rospy.get_param("~max_linear_speed",  0.8)
         self.max_angular_speed    = rospy.get_param("~max_angular_speed", 1.2)
         self.detection_timeout    = rospy.Duration(rospy.get_param("~detection_timeout", 0.7))
+        self.target_lost_timeout  = rospy.Duration(rospy.get_param("~target_lost_timeout", 3.0))
         self.control_rate         = rospy.get_param("~control_rate", 15.0)
         self.sync_slop            = rospy.get_param("~sync_slop", 0.05)  # 동기화 허용 시간차(초)
 
         # ── 상태 변수 ─────────────────────────────────────────────
+        self.state = TrackingState.IDLE
         self.latest_target      = None
         self.last_detection_time = rospy.Time(0)
+        self.target_lost_since = rospy.Time(0)
 
         self.target_track_id = None # None이면 추적 대상 없음, 숫자면 해당 ID 추적 중
         self.current_boxes = [] # 현재 프레임의 모든 박스 정보 저장
@@ -68,8 +79,8 @@ class YoloDepthFollower:
             rospy.Duration(1.0 / self.control_rate), self.control_callback
         )
         rospy.on_shutdown(self.stop_robot)
-        rospy.loginfo("YOLO depth follower ready  rgb=%s  depth=%s  cmd_vel=%s",
-                      self.rgb_topic, self.depth_topic, self.cmd_vel_topic)
+        rospy.loginfo("YOLO depth follower ready  rgb=%s  depth=%s  cmd_vel=%s  tracker=%s",
+                  self.rgb_topic, self.depth_topic, self.cmd_vel_topic, self.tracker_config)
         rospy.loginfo("Click a person in the window to start following. (r=reset, ESC=quit)")
 
     # ── 모델 로드 ─────────────────────────────────────────────────
@@ -113,7 +124,14 @@ class YoloDepthFollower:
             if self.model is None:
                 continue
 
-            result = self.model.track(frame, persist=True, conf=self.confidence_threshold, classes=[0], verbose=False)[0]
+            result = self.model.track(
+                frame,
+                persist=True,
+                conf=self.confidence_threshold,
+                classes=[0],
+                tracker=self.tracker_config,
+                verbose=False,
+            )[0]
             boxes  = self._person_boxes(result)
             self.current_boxes = boxes
 
@@ -127,6 +145,11 @@ class YoloDepthFollower:
             if target_box is None:
                 with self.lock:
                     self.latest_target = None
+                    if self.state == TrackingState.NORMAL_TRACKING and self.target_track_id is not None:
+                        # 추종 중 타겟이 사라지면 즉시 LOST로 전환하고 정지
+                        self.state = TrackingState.TARGET_LOST
+                        self.target_lost_since = rospy.Time.now()
+                        self.stop_robot_motion()
             else:
                 x1, y1, x2, y2, _tid = target_box
                 img_w = frame.shape[1]
@@ -143,6 +166,10 @@ class YoloDepthFollower:
                         "distance":          distance,
                     }
                     self.last_detection_time = rospy.Time.now()
+                    # BoT-SORT Re-ID로 동일 ID가 다시 보이면 즉시 추종 복귀
+                    if self.state in (TrackingState.IDLE, TrackingState.TARGET_LOST):
+                        self.state = TrackingState.NORMAL_TRACKING
+                        self.target_lost_since = rospy.Time(0)
 
             self._draw(frame, boxes)
             if not window_ready:
@@ -154,7 +181,12 @@ class YoloDepthFollower:
             key = cv2.waitKey(1) & 0xFF
             # 'r' 키: 타겟 리셋, ESC 키: 종료
             if key == ord('r'):
-                self.target_track_id = None
+                with self.lock:
+                    self.target_track_id = None
+                    self.latest_target = None
+                    self.state = TrackingState.IDLE
+                    self.target_lost_since = rospy.Time(0)
+                self.stop_robot_motion()
                 rospy.loginfo("Target reset; click a person again.")
             elif key == 27:  # ESC
                 rospy.signal_shutdown("user quit")
@@ -165,7 +197,10 @@ class YoloDepthFollower:
             return
         for x1, y1, x2, y2, tid in self.current_boxes:
             if x1 <= x <= x2 and y1 <= y <= y2:
-                self.target_track_id = tid
+                with self.lock:
+                    self.target_track_id = tid
+                    self.state = TrackingState.NORMAL_TRACKING
+                    self.target_lost_since = rospy.Time(0)
                 rospy.loginfo("Target selected by click: track_id=%d", tid)
                 return
  
@@ -180,6 +215,9 @@ class YoloDepthFollower:
         return out
  
     def _draw(self, frame, boxes):
+        with self.lock:
+            state_name = self.state.value
+
         for x1, y1, x2, y2, tid in boxes:
             selected = (tid == self.target_track_id)
             color = (0, 255, 0) if selected else (255, 0, 0)
@@ -187,6 +225,8 @@ class YoloDepthFollower:
             label = ("TARGET " if selected else "") + ("ID:%d" % tid)
             cv2.putText(frame, label, (x1, max(0, y1 - 6)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        cv2.putText(frame, "STATE: %s" % state_name, (10, 52),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         if self.target_track_id is None:
             cv2.putText(frame, "Click a person to follow", (10, 25),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
@@ -205,19 +245,9 @@ class YoloDepthFollower:
         valid = valid[(valid >= self.min_valid_depth) & (valid <= self.max_valid_depth)]
         return float(np.median(valid)) if valid.size > 0 else None
 
-    #  제어 루프 (P제어: 각속도 P, 선속도 P)
-    def control_callback(self, _event):
-        now = rospy.Time.now()
+    # 제어함수
+    def update_control(self, target):
         cmd = Twist()
-
-        with self.lock:
-            target = self.latest_target
-            age    = now - self.last_detection_time
-
-        # 탐색 대상 없거나 타임아웃
-        if target is None or age > self.detection_timeout:
-            self.cmd_pub.publish(cmd)
-            return
 
         # 각속도: 정규화된 center_error에 비례
         center_error_norm = target["center_error_norm"]
@@ -230,18 +260,57 @@ class YoloDepthFollower:
         distance = target["distance"]   # 디버깅
         if distance is not None:
             distance_error = distance - self.target_distance
-            
             if distance_error > 0.0:
                 cmd.linear.x = self.clamp(distance_error * self.linear_gain, 0.0, self.max_linear_speed)
 
         self.cmd_pub.publish(cmd)
+
+    def stop_robot_motion(self):
+        self.cmd_pub.publish(Twist())
+
+    #  제어 루프 (P제어: 각속도 P, 선속도 P)
+    def control_callback(self, _event):
+        now = rospy.Time.now()
+
+        with self.lock:
+            target = self.latest_target
+            age    = now - self.last_detection_time
+            state = self.state
+            lost_age = now - self.target_lost_since if self.target_lost_since != rospy.Time(0) else rospy.Duration(0)
+
+        if state == TrackingState.IDLE:
+            self.stop_robot_motion()
+            return
+
+        if state == TrackingState.TARGET_LOST:
+            # LOST에서는 무조건 정지, 제한 시간 내 재매칭만 기다림
+            self.stop_robot_motion()
+            if lost_age > self.target_lost_timeout:
+                with self.lock:
+                    self.state = TrackingState.IDLE
+                    self.target_track_id = None
+                    self.latest_target = None
+                    self.target_lost_since = rospy.Time(0)
+                rospy.logwarn("Target lost timeout. Back to IDLE.")
+            return
+
+        # 탐색 대상 없거나 타임아웃
+        if target is None or age > self.detection_timeout:
+            with self.lock:
+                if self.state == TrackingState.NORMAL_TRACKING and self.target_track_id is not None:
+                    self.state = TrackingState.TARGET_LOST
+                    self.target_lost_since = now
+            self.stop_robot_motion()
+            return
+
+        self.update_control(target)
 
     @staticmethod
     def clamp(value, low, high):
         return max(low, min(high, value))
 
     def stop_robot(self):
-        self.cmd_pub.publish(Twist())
+        self.stop_robot_motion()
         try:
             cv2.destroyAllWindows()
         except Exception:
