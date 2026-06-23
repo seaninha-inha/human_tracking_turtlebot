@@ -1,5 +1,6 @@
 <launch>
   <arg name="yolo_model" default="yolov8n.pt"/>
+  <arg name="tracker_config" default="$(find turtlebot3_gazebo)/config/botsort.yaml"/>
 
   <arg name="target_distance" default="1.5"/>   <!-- 이 거리까지 다가가서 정지 -->
   <!--input topics-->
@@ -30,6 +31,7 @@
         output="screen">
 
     <param name="model_path" value="$(arg yolo_model)"/>
+    <param name="tracker_config" value="$(arg tracker_config)"/>
 
     <param name="target_distance" value="$(arg target_distance)"/>
     <param name="rgb_topic" value="$(arg rgb_topic)"/>

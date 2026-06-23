@@ -70,7 +70,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
-install(DIRECTORY launch models rviz worlds 
+install(DIRECTORY launch models rviz worlds config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
