@@ -13,5 +13,5 @@ gmc_method: sparseOptFlow
 
 proximity_thresh: 0.5
 appearance_thresh: 0.8
-with_reid: False
+with_reid: True
 model: auto
